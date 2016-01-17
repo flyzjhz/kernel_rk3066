@@ -1,0 +1,246 @@
+--- drivers/input/touchscreen/nwd_10inch_suoling_cp_nwd/gt9xx.c
++++ drivers/input/touchscreen/nwd_10inch_suoling_cp_nwd/gt9xx.c
+@@ -415,40 +428,124 @@
+ #endif
+ 
+ key_event:  
+-  if(y>1 && y<45) ///GTP_HAVE_TOUCH_KEY
++//  if(y>1 && y<45) ///GTP_HAVE_TOUCH_KEY
++    if(y>1 && y<52) ///GTP_HAVE_TOUCH_KEY
+     {  ///    #define GTP_KEY_TAB  {KEY_MENU,  KEY_BACK,KEY_HOME,KEY_VOLUMEDOWN_NWD,KEY_VOLUMEUP_NWD,KEY_DISPLAYTOGGLE_NWD}
+ 	int key_value = 1; static timecnt=1;
++											static timecnthome=1;
+ 	
+ 	/// printk("===========%d %s====\n",__LINE__,__FUNCTION__);
+-	if( 900< x && x <940 ) ///back
++//	if( 900< x && x <940 ) ///back
++	if( 890< x && x <950 ) ///back
+ 	{   	if (timecnt != 1  && jiffies_to_msecs (jiffies - time_prev) < 200 ) return ;     
+ 		 printk("===========%d %s====\n",__LINE__,__FUNCTION__);
+ 		input_report_key(ts->input_dev, KEY_BACK, 1); nwd_dbg_tp();key_pressed= 1;
+ 	}
+-	if( 776< x && x <820 ) ///menu
+-	{	if (timecnt != 1  && jiffies_to_msecs (jiffies - time_prev) < 200 ) return ;
+-		///input_report_key(ts->input_dev,KEY_MENU ,1);  ///KEY_F1
+-		menu_key_to1();
+-		printk("===========%d %s====\n",__LINE__,__FUNCTION__);key_pressed= 0;
++//	if( 776< x && x <820 ) ///menu
++	if( 766< x && x <830 ) ///menu
++	{	if (timecnt != 1  && jiffies_to_msecs (jiffies - time_prev) < 300 ) return ;
++		input_report_key(ts->input_dev,KEY_SELF_MENU ,1);  ///KEY_F1
++		//menu_key_to1();
++		printk("======zyj=====%d %s====\n",__LINE__,__FUNCTION__);key_pressed= 0;
+ 	}
+-	if( 330< x && x <365 )
++//	if( 330< x && x <365 )
++	if( 320< x && x <375 )
+ 	{	 printk("===========%d %s====\n",__LINE__,__FUNCTION__);
+-		if (timecnt != 1  && jiffies_to_msecs (jiffies - time_prev) < 200 ) return ;
++		if (timecnt != 1  && jiffies_to_msecs (jiffies - time_prev) < 150 ) return ;
+ 		input_report_key(ts->input_dev, KEY_VOLUMEDOWN_NWD, 1); nwd_dbg_tp();key_pressed= 3;
+ 	}
+-	if( 667< x && x <705 )
++//	if( 667< x && x <705 )
++	if( 657< x && x <715 )
+ 	{	 
++		
++		/***
+ 		if (timecnt != 1  && jiffies_to_msecs (jiffies - time_prev) < 200 ) return ;		
+ 		printk("===========%d %s====\n",__LINE__,__FUNCTION__);key_pressed= 2;
+ 		///input_report_key(ts->input_dev, KEY_HOME, 1); ///nwd_dbg_tp();
+ 		home_key_to1();
+-		///input_report_key(ts->input_dev, KEY_HOME, 1); nwd_dbg_tp();
++		///input_report_key(ts->input_dev, KEY_HOME, 1); nwd_dbg_tp();*/
++		
++		
++		
++		
++		
++		
++		
++		short_pressedhome = 0; long_pressedhome = 0;
++		if( press_douhome == 0) press_oncehome++; 
++		///	if (long_pressed == 1 && timecnt != 1  && jiffies_to_msecs (jiffies - time_prev5) < 300 )  { return ;}
++		if (timecnthome != 1  && jiffies_to_msecs (jiffies - time_prev5) < 50 )  {press_douhome = 1; return ;}
++		printk("===========%d %s  bb press_once:%d====\n",__LINE__,__FUNCTION__,press_oncehome);
++ 		press_douhome = 0; // time_prev5 = jiffies;
++		if(press_oncehome>2&&press_oncehome < 39 &&key_releasedhome!= 1)
++			{  
++		mod_timer(&tpsl_timerhome, jiffies + msecs_to_jiffies(300));
++////input_report_key(ts->input_dev, 250,1); key_released = 0;press_once = 0;
++		
++ ///input_sync(ts->input_dev);
++	timecnthome++; key_pressed=5;
++	time_prev5home = jiffies;
++	key_releasedhome = 0; return ;
++
++}///short press
++		///if(press_once==50&&key_released!= 1) 
++		if(press_oncehome==40) 
++		{	input_set_capability(input_dev_g, EV_KEY, 252);
++			///home_key_to1();
++			///input_report_key(input_dev_g, 252,1);input_sync(input_dev_g);
++			input_report_key(ts->input_dev, 252,1); 
++			///long_key_to1();
++					printk("===========%d %s====\n",__LINE__,__FUNCTION__);
++			input_sync(ts->input_dev);key_pressed  = 2;
++			key_releasedhome = 0;
++			press_oncehome = 0;
++			//input_report_key(input_dev_g, 250,0);input_sync(input_dev_g); long_pressed = 1;
++			//input_report_key(input_dev_g, 250,0);input_sync(input_dev_g);
++		///	input_report_key(input_dev_g, POWEROFFKEYFUN,1);input_sync(input_dev_g);
++				///home_key_to1();
++				input_report_key(ts->input_dev, 252,1);  input_sync(input_dev_g);
++			printk("====home11lllllllllllllllllllllllllllllllllllllll=======%d %s====\n",__LINE__,__FUNCTION__);
++			long_pressedhome = 1; long_press_timehome =  jiffies;
++
++
++ ///	input_sync(ts->input_dev);
++			timecnthome++;
++			time_prev5home = jiffies;
++			key_releasedhome = 0; return ;
++
++
++		}///long press
++
++		///input_report_key(ts->input_dev, KEY_DISPLAYTOGGLE_NWD, 1); nwd_dbg_tp();
++		///input_report_key(ts->input_dev, KEY_DISPLAYTOGGLE_NWD,0); 
++		///input_report_key(ts->input_dev, KEY_POWER, 1);   ///short :250 long:251
++		
++		nwd_dbg_tp();
++		
++		///input_report_key(ts->input_dev, KEY_DISPLAYTOGGLE_NWD,1); 
++			key_pressed = 2;
++
++	/// input_sync(ts->input_dev);
++		timecnthome++;
++		time_prevhome = jiffies;
++		time_prev5home = jiffies;
++		key_releasedhome = 0;
++  		tp_int_trigeredhome = 1;
++///setup_timer( &led2_timer, tpsl_timer_callback, 0 );
++		mod_timer(&tpsl_timerhome, jiffies + msecs_to_jiffies(300));
++          	return ;
++		
++		
++		
++		
+ 	}
+-	if( 215< x && x <245 )
+-	{	if (timecnt != 1  && jiffies_to_msecs (jiffies - time_prev) < 200 ) return ;
++//	if( 215< x && x <245 )
++	if( 205< x && x <255 )
++	{	if (timecnt != 1  && jiffies_to_msecs (jiffies - time_prev) < 150 ) return ;
+ 		input_report_key(ts->input_dev, KEY_VOLUMEUP_NWD, 1); nwd_dbg_tp();key_pressed= 4;
+ 	}
+-	if( 85< x && x <135 )
++//	if( 85< x && x <135 )
++	if( 75< x && x <145 )
+ 	{	short_pressed = 0; long_pressed = 0;
+ 		if( press_dou == 0) press_once++; 
+ 		///	if (long_pressed == 1 && timecnt != 1  && jiffies_to_msecs (jiffies - time_prev5) < 300 )  { return ;}
+@@ -617,40 +756,63 @@
+ static void gtp_touch_up(struct goodix_ts_data* ts, s32 id)
+ {	///printk("===========%d %s====\n",__LINE__,__FUNCTION__);
+ 	int i=6;/****/
+-	if(key_pressed==2){
+-home_key_to0();key_pressed= 9;
+-return;
+-}
+-	if(key_pressed==5){
++	if(key_pressed==2)
++	{  /***
++		home_key_to0();key_pressed= 9;
++		return;*/
++		
++		
++				if( long_pressedhome ==1)
++		{
++			input_report_key(ts->input_dev, 252,0); 
++			long_pressedhome = 0;
++		}
++		if( short_pressedhome == 1)
++		{
++	
++			home_key_to0();
++			short_pressedhome = 0;
++		 }
++//	printk("===========%d %s====\n",__LINE__,__FUNCTION__);
++	///if (press_once >5)
++		key_pressed= 9;	/////if(press_once==7) key_released= 1;key_pressed= 9;
++		return;
++	}
++	else if(key_pressed==5)
++	{
+ ///tp_int_trigered = 0;
+ ///if(tp_int_trigered ==0)
+ ///press_once==0;
+-	if( long_pressed ==1)
+-	{
+-		input_report_key(ts->input_dev, POWEROFFKEYFUN,0); 
+-		long_pressed = 0;
+-	}
+-	if( short_pressed == 1)
+-	{
++		if( long_pressed ==1)
++		{
++			input_report_key(ts->input_dev, POWEROFFKEYFUN,0); 
++			long_pressed = 0;
++		}
++		if( short_pressed == 1)
++		{
+ 	
+-		input_report_key(ts->input_dev, MUTE_SOUND_FUN,0);
+-		short_pressed = 0;
+-	 }
++			input_report_key(ts->input_dev, MUTE_SOUND_FUN,0);
++			short_pressed = 0;
++		 }
+ //	printk("===========%d %s====\n",__LINE__,__FUNCTION__);
+ 	///if (press_once >5)
+-key_pressed= 9;	/////if(press_once==7) key_released= 1;key_pressed= 9;
+-return;
+-}
+-
++		key_pressed= 9;	/////if(press_once==7) key_released= 1;key_pressed= 9;
++		return;
++	}
+ 
+-	else if(key_pressed==0){
+-menu_key_to0();key_pressed= 9;
+-return;
+-}
+-else if(key_pressed!=9){
++	else if(key_pressed==0)
++	{
++//		menu_key_to0();
++		input_report_key(ts->input_dev,KEY_SELF_MENU ,0);  
++		key_pressed= 9;
++		printk("======zyj=====%d %s====\n",__LINE__,__FUNCTION__);
++		return;
++	}
++	else if(key_pressed!=9)
++	{
+  /// while( i--)	  {
+-    input_report_key(ts->input_dev, touch_key_array[key_pressed], 0); key_pressed= 9;///nwd_dbg_tp(); 
+-	printk("===========%d %s====\n",__LINE__,__FUNCTION__);	        
++    		input_report_key(ts->input_dev, touch_key_array[key_pressed], 0); key_pressed= 9;///nwd_dbg_tp(); 
++	printk("======zyj=====%d %s====\n",__LINE__,__FUNCTION__);	        
+ 	input_sync(ts->input_dev);
+ 	///}
+ 	return;
+@@ -1658,11 +1821,13 @@
+     struct goodix_platform_data *pdata ; ///wj add
+     GTP_DEBUG_FUNC();
+     setup_timer( &tpsl_timer, tpsl_timer_callback, 0 );
++    setup_timer( &tpsl_timerhome, tpsl_timer_callbackhome, 0 );
++#if 0
+     //do NOT remove these logs
+     GTP_INFO("GTP Driver Version: %s", GTP_DRIVER_VERSION);
+     GTP_INFO("GTP Driver Built@%s, %s", __TIME__, __DATE__);
+     GTP_INFO("GTP I2C Address: 0x%02x", client->addr);
+-
++#endif
+     i2c_connect_client = client;
+     
+     if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) 

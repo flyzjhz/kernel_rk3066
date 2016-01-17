@@ -1,0 +1,7 @@
+config EXFAT_FS
+        tristate "EXFAT fs support"
+	select NLS_UTF8
+        help
+          If unsure, say N.
+
+

@@ -1,0 +1,41 @@
+choice
+        depends on TOUCHSCREEN_NWD_GT9XX 
+        prompt  "touchscreen parameter select"
+
+config PENGHUI_9INCH_ZHONGCHU_GT911
+       bool "penghui 9inch 1024*600touchcreen"
+
+config PENGHUI_8INCH_ZHONGCHU_GT911
+       bool "penghui 8inch 1024*600 touchcreen"
+
+config QIWEN_8INCH_GT911 
+       bool "qiwen 8inch 1024*600 touchcreen"
+
+config QIWEN_8INCH_GT911_A
+       bool "qiwen 8inch panel 1024x480 touchcreen"
+
+config KEWEI_9INCH_GT911_KEY1
+       bool "kewei 9inch with key 1 panel 1024x600 touchcreen"
+
+config KEWEI_9INCH_GT911_KEY2
+       bool "kewei 9inch with key 2 panel 1024x600 touchcreen"
+
+config KEWEI_9INCH_GT911_KEY3
+       bool "kewei 10.1inch with key 3 panel 1024x600 touchcreen"
+
+config YOUYANG_8INCH_GT911
+       bool "youyang 8inch panel 1024x600 touchcreen"
+
+config HUABAO_DANGDINGJI_6INCH_GT911
+       bool "hua bao 6inch panel/pnd 800*480 touchcreen"
+
+config HANGSHENG_10INCH_GT928
+       bool "hangsheng 10inch panel 1024x600 touchcreen"
+
+config HAOBANGSHOU_8INCH_GT911
+       bool "haobangshou(jiangchuang) 8inch panel 1024600 touchcreen"
+
+config YOUYANG_TUGUAN_10INCH_GT928
+       bool "youyang tuguan 10inch panel 1024600 touchcreen"
+endchoice
+

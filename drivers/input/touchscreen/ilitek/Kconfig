@@ -1,0 +1,21 @@
+choice
+        depends on TOUCHSCREEN_NWD_ILITEK
+        prompt  "touchscreen parameter select"
+
+config YINGLONG_ZHENGJI_1024600
+       bool "yinglong zhengji 1024*600 touchcreen"
+
+config YINGLONG_ZHENGJI_FOCUS_1024600
+       bool "yinglong zhengji focus 1024*600 touchcreen"
+
+config YINGLONG_YUANCHEPIN_800480
+       bool "yinglong es250 yuan che ping sheng ji 800*480 touchcreen"
+
+config YINGLONG_YUANCHEPIN_NX300_800480
+       bool "yinglong NX300 yuan che ping sheng ji 800*480 touchcreen"
+
+config YINGLONG_ZHENGJI_963A_1024600
+       bool "yinglong zhengji 963A 1024*600 touchcreen"
+
+endchoice
+

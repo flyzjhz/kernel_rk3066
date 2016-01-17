@@ -1,0 +1,12 @@
+choice
+        depends on TOUCHSCREEN_NWD_ILITEK
+        prompt  "touchscreen parameter select"
+
+config YINGLONG_ZHENGJI_1024600
+       bool "yinglong zhengji 1024*600 touchcreen"
+
+
+config YINGLONG_YUANCHEPIN_800480
+       bool "yinglong yuan che ping sheng ji 800*480 touchcreen"
+endchoice
+

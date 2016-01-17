@@ -1,0 +1,75 @@
+/****************************************************************************
+ *   FileName    : SHA204_comm.h
+ *   Description :
+ ****************************************************************************
+*
+*   Copyright (c) Nowada, Inc.
+*   ALL RIGHTS RESERVED
+*
+*	Created: 2011-11-28
+*  	Author: Jackson Meng
+****************************************************************************/
+
+#ifndef SHA204_COMM_H
+#define SHA204_COMM_H
+
+//! maximum command delay
+#define SHA204_COMMAND_EXEC_MAX      69
+
+//! minimum number of bytes in command (from count byte to second CRC byte)
+#define SHA204_CMD_SIZE_MIN          7
+
+//! maximum size of command packet (CheckMac)
+#define SHA204_CMD_SIZE_MAX          84
+
+//! number of CRC bytes
+#define SHA204_CRC_SIZE              2
+
+//! buffer index of status byte in status response
+#define SHA204_BUFFER_POS_STATUS     (1)
+
+//! buffer index of first data byte in data response
+#define SHA204_BUFFER_POS_DATA       (1)
+
+//! status byte after wake-up
+#define SHA204_STATUS_BYTE_WAKEUP    0x11
+
+//! command parse error
+#define SHA204_STATUS_BYTE_PARSE     0x03
+
+//! command execution error
+#define SHA204_STATUS_BYTE_EXEC      0x0F
+
+//! communication error
+#define SHA204_STATUS_BYTE_COMM      0xFF
+
+//////////////////////////////////////////////////////////////////////
+const static UINT8 GPB_BUF [16][8] =
+{
+{0x66, 0x85, 0xAD, 0xC7, 0x3F, 0xA8, 0xE2, 0x44},
+{0x38, 0xE3, 0xDC, 0xFD, 0x0F, 0xB0, 0x0A, 0xD1},
+{0x14, 0x6F, 0xA5, 0xE1, 0x0A, 0xB1, 0x45, 0x59},
+{0x01, 0x8A, 0xAF, 0x27, 0x52, 0xFC, 0x8C, 0x76},
+{0x43, 0x7A, 0xFB, 0x87, 0x15, 0x25, 0x5B, 0x9B},
+{0x95, 0x02, 0x1E, 0xFD, 0x18, 0x6B, 0x89, 0xC8},
+{0x5C, 0x6A, 0xEB, 0x59, 0xCE, 0x4E, 0x09, 0xF8},
+{0x31, 0x89, 0xB8, 0x42, 0x17, 0x26, 0xBA, 0x2D},
+{0xDA, 0x2D, 0xE4, 0x06, 0xCB, 0x1E, 0x7D, 0x7C},
+{0x7E, 0x7B, 0x6E, 0xA4, 0x59, 0x3F, 0x99, 0xEB},
+{0xB4, 0x42, 0xA7, 0xB1, 0xB4, 0xB7, 0x54, 0xBE},
+{0x1A, 0x57, 0xE8, 0x5F, 0x86, 0xD0, 0xB2, 0x22},
+{0x59, 0x45, 0x5C, 0x1D, 0xFE, 0x4B, 0x35, 0x2B},
+{0x0D, 0xA2, 0xE9, 0xCF, 0x72, 0xF9, 0x8E, 0x85},
+{0x25, 0x3B, 0x7E, 0xCC, 0x16, 0xE7, 0xEA, 0x19},
+{0xA8, 0x93, 0x53, 0xA2, 0x14, 0xC2, 0xC1, 0x11}
+
+};
+
+//////////////////////////////////////////////////////////////////////
+void SHA204c_Calculate_crc(UINT8 length, UINT8 *data, UINT8 *crc);
+UINT8 SHA204c_Check_crc(UINT8 *response);
+UINT8 SHA204c_wakeup(UINT8 *response);
+UINT8 SHA204c_resync(UINT8 size, UINT8 *response);
+UINT8 SHA204c_Send_and_receive(UINT8 *tx_buffer, UINT8 rx_size, UINT8 *rx_buffer,
+				UINT8 execution_delay, UINT8 execution_timeout);
+#endif

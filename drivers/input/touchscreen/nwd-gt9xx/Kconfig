@@ -1,0 +1,105 @@
+choice
+        depends on TOUCHSCREEN_NWD_GT9XX 
+        prompt  "touchscreen parameter select"
+
+config QIWEN_8INCH_GT911_A
+       bool "qiwen 8inch panel 1024x480 touchcreen"
+
+config QIWEN_BENZ
+       bool "qiwen BENZ panel 1024x600 touchcreen"
+
+config QIWEN_BWM3
+       bool "qiwen BMW3 panel 1280x480 touchcreen"
+
+config HUALINGAN_YCP 
+       bool "hualingan 8inch panel 1024x600 touchcreen"
+
+config HUALINGAN_YCP_9INCH
+       bool "hualingan 9inch panel 1024x600 touchcreen benzcls"
+
+config ZHUOYI_BMW 
+       bool "zhuoyi 1280x600 touchcreen"
+
+config ZHUOYI_BMW_3li
+       bool "zhuoyi 1280x480 touchcreen"
+
+config KEWEI_9INCH_GT911_KEY3
+       bool "kewei 10.1inch with key 3 panel 1024x600 touchcreen"
+
+config YOUYANG_8INCH_GT911
+       bool "youyang ture is aiying 8inch panel 1024x600 touchcreen"
+
+config HUABAO_DANGDINGJI_6INCH_GT911
+       bool "hua bao 6inch panel/pnd 800*480 touchcreen"
+
+config HANGSHENG_10INCH_GT928
+       bool "hangsheng 10inch panel 1024x600 touchcreen"
+
+config HAOBANGSHOU_8INCH_GT911
+       bool "haobangshou(jiangchuang) 8inch panel 1024600 touchcreen"
+
+config YOUYANG_BAOLAI_10INCH_GT911
+       bool "youyang tuguan 10inch panel 1024600 touchcreen"
+
+config FEIYIN_10INCH_GT928
+       bool "feiyin zhongchu 10inch panel 1024600 touchcreen"
+
+config YINZHIYUAN_10INCH_GT928
+       bool "yinzhiyuan 10inch panel 1024600 touchcreen"
+
+config YINZHIYUAN_8INCH_GT928
+       bool "yinzhiyuan 8inch panel 1024600 touchcreen"
+
+config HANGSHENG_10INCH_GT928
+       bool "hangsheng tuguan 10inch panel 1024600 touchcreen"
+
+config SUOLING_ES250_10INCH_GT928
+       bool "suoling es250 8inch panel 800480 touchcreen"
+
+config SUOLING_ADQ3_8INCH_GT928
+       bool "suoling AudiQ3 8inch panel 1024600 touchcreen"
+
+config BEIJIAN_10INCH_GT928
+       bool "beijian 10inch panel 1024600touchcreen"
+
+config MAIXIN_10INCH_GT928
+       bool "maixin 10inch panel 1024600 touchcreen"
+
+config SHLL_10INCH_GT928
+       bool "sheng hang le lu 10inch panel 1024600 touchcreen"
+
+config JILI_HONGJING
+       bool "jili hongjing(xiongmao) 10inch panel 1024768 touchcreen"
+
+config HEXIN_BMW
+       bool "hexin panel 1024487 touchcreen"
+
+config HEXIN_BMW320
+       bool "hexinBMW320 panel 1280480 touchcreen"
+
+config HEXIN_BMW520
+       bool "hexinBMW520 zhongpei panel 1280600 touchcreen"
+
+config HEXIN_BMW520_ZC
+       bool "hexinBMW520 zhongchu panel 1280600 touchcreen"
+
+config YLZJ_10INCH_GT928
+       bool "yinglong zhengji escort(furuisi) 1024*600 touchcreen"
+
+config PENGHUI_BMW
+       bool "penghui panel 1024480 touchcreen"
+
+config BEIHANG_BENZ
+       bool "beihang benz panel 1024600 touchcreen"
+
+config BEIHANG_ADQ3
+       bool "beihang AudiQ3 7inch panel 1024600 touchcreen"
+
+config SUOLING_BENZ
+       bool "suoing benzc200 panel 1024600 touchcreen base on beihang/hualingan benz"
+
+config SUOLING_BENZ_GLK
+       bool "suoing benz_glk panel 1024600 touchcreen"
+
+endchoice
+

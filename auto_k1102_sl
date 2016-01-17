@@ -1,0 +1,3 @@
+make k1102_sl_defconfig
+make menuconfig
+cp -rf .config arch/arm/configs/k1102_sl_defconfig

@@ -1,0 +1,467 @@
+/*
+ * author: os-huangfujun
+ * date:   2014-11-25
+ * 
+ */
+
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/i2c.h>
+#include <linux/fs.h>
+#include <linux/irq.h>
+#include <linux/input.h>
+#include <linux/cdev.h>
+#include <linux/uaccess.h> /*copy_from_user */
+#include <linux/vmalloc.h>
+#include <linux/interrupt.h>
+#include <linux/delay.h>
+#include <linux/slab.h>
+#include <mach/gpio.h>
+#include <plat/board.h>
+#include "zt2083_tp.h"
+
+unsigned int cmd_x = 0x80;
+unsigned int cmd_y = 0x90;
+
+void platform_iic_reg_write(struct i2c_client *client, unsigned char cmd)
+{
+	struct i2c_msg msg;
+	struct i2c_adapter *adapter = client->adapter;
+
+	if (NULL==adapter){
+		printk("%s: adapter==NULL\n", __FUNCTION__);
+		return ;
+	}
+
+	msg.addr  = client->addr;
+	msg.flags = 0x00;
+	msg.len   = 1;
+	msg.buf   = &cmd;
+	msg.scl_rate = 100 * 1000;    // for Rockchip
+	msg.udelay   = 5;
+
+	i2c_transfer(adapter, &msg, 1);
+}
+
+int platform_iic_reg_read(struct i2c_client *client, unsigned char *buf)
+{
+	struct i2c_msg msg;
+	unsigned int ret = -1;
+	struct i2c_adapter *adapter = client->adapter;
+
+	if (NULL==adapter){
+		printk("%s: adapter==NULL\n", __FUNCTION__);
+		return -1;
+	}
+
+	msg.addr  = client->addr;
+	msg.flags = 0x01;
+	msg.len   = 2;
+	msg.buf   = buf;
+	msg.scl_rate = 100 * 1000;    // for Rockchip
+	msg.udelay   = 5;
+
+	ret = i2c_transfer(adapter, &msg, 1);
+
+	return ret;
+}
+
+void report_value(struct zt2803_ts *zt2803_ts)
+{
+	switch(zt2803_ts->keystate)
+	{
+		case PEN_DOWN:
+		case PEN_REPEAT:
+			input_report_abs(zt2803_ts->input_dev, ABS_X, zt2803_ts->x_rp);
+			input_report_abs(zt2803_ts->input_dev, ABS_Y, zt2803_ts->y_rp);
+			input_report_key(zt2803_ts->input_dev, BTN_TOUCH, 1);
+			input_report_abs(zt2803_ts->input_dev, ABS_PRESSURE, 1);
+			input_sync(zt2803_ts->input_dev);
+			break;
+		case PEN_UP:
+			input_report_key(zt2803_ts->input_dev, BTN_TOUCH, 0);
+			input_report_abs(zt2803_ts->input_dev, ABS_PRESSURE, 0);
+			input_sync(zt2803_ts->input_dev);
+			break;
+		default:
+			;
+	}
+}
+
+/*
+ * sort val array from the min to the max,
+ * cut off the min val and max val,
+ * then average the last part,
+ * return the average.
+ */
+int middle_value_fiter(int *val, int n)
+{
+	int i;
+	int j;
+	int temp    = 0;
+	int ret_val = 0;
+
+	for(i=1; i<n; i++)
+	{
+		for(j=0; j<i; j++)
+		{
+			if(val[j] > val[i])
+			{
+				temp   = val[j];
+				val[j] = val[i];
+				val[i] = temp;
+			}
+		}
+	}
+
+
+	if(n >= 3)
+	{
+		for(i=1; i<n-1; i++)
+		{
+			ret_val += val[i];
+		}
+
+		ret_val = ret_val / (n-2);
+	}
+
+	return ret_val;
+}
+
+int diff_val(int x1, int x2)
+{
+	int diff;
+
+	diff = (x1>x2) ? (x1-x2) : (x2-x1);
+	return diff;
+}
+
+void data_process_func(struct zt2803_ts *zt2803_ts, int data_x, int data_y)
+{
+	int i;
+	int diffx;
+	int diffy;
+	int diffx1;
+	int diffy1;
+	int diffx2;
+	int diffy2;
+	int get_val = 0;
+	static int pen_count     = 0;
+	static int data_x_tmp_bk = 0;
+	static int data_y_tmp_bk = 0;
+	static int data_x_tmp[DATA_NUM] = {0};
+	static int data_y_tmp[DATA_NUM] = {0};
+
+
+	get_val = gpio_get_value(CTP_INT_PIN);
+	if(0 == get_val)
+	{
+#if 0
+		diffx1 = diff_val(data_x_tmp[1], data_x_tmp[0]);
+		diffx2 = diff_val(data_x_tmp[1], data_x_tmp[2]);
+
+		diffy1 = diff_val(data_y_tmp[1], data_y_tmp[0]);
+		diffy2 = diff_val(data_y_tmp[1], data_y_tmp[2]);
+#endif
+
+		if(pen_count < DATA_NUM)
+		{
+			zt2803_ts->keystate = PEN_DOWN;
+		}
+		else
+		{
+			pen_count   = DATA_NUM;
+
+			diffx = diff_val( (data_x_tmp[1]+data_x)/2, data_x_tmp[0] );
+			diffy = diff_val( (data_y_tmp[1]+data_y)/2, data_y_tmp[0] );
+
+			if(diffx > PEN_OFFSET && diffx > PEN_OFFSET)
+			{
+				data_x = data_x_tmp[0];
+				data_y = data_y_tmp[0];
+
+				zt2803_ts->data_donot_update_flag = 1;
+			}
+#if 0
+			diffx = diff_val(data_x, data_x_tmp[0]);
+			diffy = diff_val(data_y, data_y_tmp[0]);
+
+			if(diffx < PEN_OFFSET && diffy < PEN_OFFSET)
+			{
+				data_x = data_x_tmp[0];
+				data_y = data_y_tmp[0];
+
+				zt2803_ts->data_donot_update_flag = 1;
+			}
+			else if(diffx > PEN_OFFSET + diffx1 + diffx2 && diffx1 > 0 && diffx2 > 0 ||
+					diffy > PEN_OFFSET + diffy1 + diffy2 && diffy1 > 0 && diffy2 > 0)
+			{
+				data_x = data_x_tmp[0];
+				data_y = data_y_tmp[0];
+
+				zt2803_ts->data_donot_update_flag = 1;
+			}
+#endif
+
+#if 0
+			if( data_x < data_x_tmp_bk+PEN_OFFSET &&
+					data_x > data_x_tmp_bk-PEN_OFFSET &&
+					data_y < data_y_tmp_bk+PEN_OFFSET && 
+					data_y > data_y_tmp_bk-PEN_OFFSET )
+			{
+				data_x = data_x_tmp_bk;
+				data_y = data_y_tmp_bk;
+			}
+			else
+			{
+				data_x_tmp_bk = data_x;
+				data_y_tmp_bk = data_y;
+			}
+#endif
+
+#if 0
+			data_x_tmp += data_x;
+			data_y_tmp += data_y;
+			data_x      = data_x_tmp >> 1;
+			data_y      = data_y_tmp >> 1;
+#endif
+
+			zt2803_ts->keystate = PEN_REPEAT;
+			printk("+++ (x, y) (%4d, %4d) +++\n", data_x, data_y);
+		}
+
+		if(zt2803_ts->data_donot_update_flag == 0)
+		{
+			for(i=DATA_NUM-1; i>0; i--)
+			{
+				data_x_tmp[i] = data_x_tmp[i-1];
+				data_y_tmp[i] = data_y_tmp[i-1];
+			}
+			data_x_tmp[0]  = data_x;
+			data_y_tmp[0]  = data_y;
+		}
+		zt2803_ts->data_donot_update_flag = 0;
+
+		pen_count++;
+	}
+	else
+	{
+		zt2803_ts->keystate = PEN_UP;
+		zt2803_ts->use_irq = 0;
+		pen_count = 0;
+
+		for(i=0; i<DATA_NUM; i++)
+		{
+			data_x_tmp[i] = 0;
+			data_y_tmp[i] = 0;
+		}
+	}
+	printk("1== (x, y) (%4d, %4d) ===\n", data_x, data_y);
+	printk("\n");
+
+	zt2803_ts->x_rp = data_x;
+	zt2803_ts->y_rp = data_y;
+
+	report_value(zt2803_ts);
+}
+
+static void zt2803_ts_timer_func(unsigned long data)
+{
+	int ret    = 0;
+	int temp   = 0;
+	int data_x = 0;
+	int data_y = 0;
+	unsigned char buf_x[2];
+	unsigned char buf_y[2];
+	struct zt2803_ts *zt2803_ts = (struct zt2803_ts *)data;
+
+	/* Activate x+ x-, and get x value */
+	platform_iic_reg_write(zt2803_ts->client, cmd_x);
+	ret = platform_iic_reg_read(zt2803_ts->client, buf_x);
+
+	/* Activate y+ y-, and get y value */
+	platform_iic_reg_write(zt2803_ts->client, cmd_y);
+	ret = platform_iic_reg_read(zt2803_ts->client, buf_y);
+
+	/* write back to init 0x00, or else can not generate irq pulse */
+	platform_iic_reg_write(zt2803_ts->client, 0x00);
+
+	/* merge data bytes read x and y analog value */
+	data_x = (unsigned int)buf_x[0]<<4 | buf_x[1]>>4;
+	data_y = (unsigned int)buf_y[0]<<4 | buf_y[1]>>4;
+
+	/* change between x and y */
+	temp   = data_y;
+	data_y = data_x;
+	data_x = 4096 - temp;
+#if 1
+	printk("data_x:%-4d \n", data_x);
+	printk("data_y:%-4d \n", data_y);
+#endif
+
+	data_process_func(zt2803_ts, data_x, data_y);
+
+	if(zt2803_ts->use_irq == 1)
+	{
+		mod_timer(&zt2803_ts->timer, jiffies + msecs_to_jiffies(10) );
+	}
+	else
+	{
+		enable_irq(zt2803_ts->client->irq);
+	}
+}
+
+
+static irqreturn_t zt2803_ts_irq_handler(int irq, void *dev_id)
+{
+	struct zt2803_ts *zt2803_ts = dev_id;
+	disable_irq_nosync(zt2803_ts->client->irq);
+	//printk(KERN_INFO "-----%s------ \n", __FUNCTION__);
+
+	//queue_work(zt2803_ts->wq, &zt2803_ts->work);
+	zt2803_ts->use_irq = 1;
+	mod_timer(&zt2803_ts->timer, jiffies + msecs_to_jiffies(15) );
+
+	return IRQ_HANDLED;
+}
+
+static int zt2083_tp_probe(struct i2c_client *client, const struct i2c_device_id *did)
+{
+	int ret = -1;
+	struct zt2803_ts *zt2803_ts;
+
+
+	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) 
+	{
+		printk(KERN_ERR "I2C check functionality failed.\n");
+		return -ENODEV;
+	}
+
+	zt2803_ts = kzalloc(sizeof(struct zt2803_ts), GFP_KERNEL);
+	if (zt2803_ts == NULL)
+	{
+		printk(KERN_ERR "Alloc GFP_KERNEL memory failed.\n");
+		return -ENOMEM;
+	}
+	memset(zt2803_ts, 0, sizeof(struct zt2803_ts));
+
+	//zt2803_ts->wq = create_singlethread_workqueue("zt2803_ts_wq");
+	//INIT_WORK(&zt2803_ts->work, zt2803_ts_work_func);
+	zt2803_ts->client = client;
+	spin_lock_init(&zt2803_ts->irq_lock);
+
+	i2c_set_clientdata(client, zt2803_ts);
+
+	ret = gpio_request(CTP_INT_PIN, "ZT2803_INT_PIN");
+	if(ret < 0)
+	{
+		printk(KERN_ERR "CTP_INT_PIN request fail.\n");
+		goto tp_gpio_request_fail;
+	}
+	gpio_direction_input(CTP_INT_PIN);
+	gpio_pull_updown(CTP_INT_PIN, 0);
+	zt2803_ts->irq = gpio_to_irq(CTP_INT_PIN);
+	zt2803_ts->client->irq = zt2803_ts->irq;
+
+	zt2803_ts->input_dev = input_allocate_device();
+	if(zt2803_ts->input_dev == NULL)
+	{
+		printk(KERN_ERR "zt2803_ts allocate input device fail.\n");
+		goto tp_allocate_input_fail;
+	}
+
+	zt2803_ts->input_dev->evbit[0] = BIT_MASK(EV_SYN) | BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS) ;
+	zt2803_ts->input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
+	__set_bit(INPUT_PROP_DIRECT, zt2803_ts->input_dev->propbit);
+
+	input_set_abs_params(zt2803_ts->input_dev, ABS_X, 0, 0xFFF, 0, 0);
+	input_set_abs_params(zt2803_ts->input_dev, ABS_Y, 0, 0xFFF, 0, 0);
+	input_set_abs_params(zt2803_ts->input_dev, ABS_PRESSURE, 0, 1, 0, 0);
+	input_set_abs_params(zt2803_ts->input_dev, ABS_TOOL_WIDTH, 0, 15, 0, 0);
+	input_set_abs_params(zt2803_ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, 1, 0, 0);
+	input_set_abs_params(zt2803_ts->input_dev, ABS_MT_WIDTH_MAJOR, 0, 15, 0, 0);
+
+    ret = input_register_device(zt2803_ts->input_dev);
+	if(ret < 0)
+	{
+		printk(KERN_ERR "zt2803_ts input dev register fail.\n");
+		goto tp_input_dev_register_fail;
+	}
+
+	ret  = request_irq(zt2803_ts->client->irq, 
+			zt2803_ts_irq_handler,
+			IRQ_TYPE_LEVEL_LOW,
+			"zt2803_ts_irq",
+			zt2803_ts);
+	if(ret < 0)
+	{
+		printk(KERN_ERR "zt2803_ts request irq fail.\n");
+		goto tp_irq_request_fail;
+	}
+
+	init_timer(&zt2803_ts->timer);    
+	zt2803_ts->timer.expires = jiffies + msecs_to_jiffies(15);
+	zt2803_ts->timer.function = &zt2803_ts_timer_func;
+	zt2803_ts->timer.data = (unsigned long)zt2803_ts;
+
+	printk(KERN_INFO "%s\n", __FUNCTION__);
+	zt2083_sysdev_debug_init(&client->dev);
+	return 0;
+
+tp_irq_request_fail:
+	input_unregister_device(zt2803_ts->input_dev);
+tp_input_dev_register_fail:
+	input_free_device(zt2803_ts->input_dev);
+tp_allocate_input_fail:
+	gpio_free(CTP_INT_PIN);
+tp_gpio_request_fail:
+	kfree(zt2803_ts);
+
+	return ret;
+}
+
+static int zt2083_tp_remove(struct i2c_client *client)
+{
+	//printk(KERN_INFO "-----%s--d_wq2---- \n", __FUNCTION__);
+	zt2083_sysdev_debug_exit(&client->dev);
+	return 0;
+}
+
+static const struct i2c_device_id	zt2083_tp_id[] =
+{
+	{ "zt2083_tp", 0 },
+	{  },
+};
+
+static struct i2c_driver	zt2083_tp_driver = 
+{
+	.driver   = 
+	{
+		.name = "zt2083_tp",
+		.owner= THIS_MODULE,
+	},
+	.probe    = zt2083_tp_probe,
+	.remove   = zt2083_tp_remove,
+	.id_table = zt2083_tp_id,
+};
+
+static int __init zt2083_tp_module_init(void)
+{
+	//printk(KERN_INFO "-----%s------ \n", __FUNCTION__);
+	return i2c_add_driver(&zt2083_tp_driver);
+}
+
+static void __exit zt2083_tp_module_exit(void)
+{
+	//printk(KERN_INFO "-----%s------ \n", __FUNCTION__);
+	i2c_del_driver(&zt2083_tp_driver);
+}
+
+module_init(zt2083_tp_module_init);
+module_exit(zt2083_tp_module_exit);
+
+MODULE_DESCRIPTION("ZILLTEK ZT2083 i2c touch screen");
+MODULE_AUTHOR("Alex <os-huangfujun@nowada.com>");
+MODULE_LICENSE("GPL v2");
+
